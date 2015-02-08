@@ -28,10 +28,12 @@ public class LdaTrainer implements GenericTool {
     long startTime = 0;
 
     public void run(String[] args) throws Exception {
+        // init sampler and model initializer
         startTime = System.currentTimeMillis();
         GibbsSamplingTool sampler = new GibbsSamplingTool();
         InitModelTool initializer = new InitModelTool();
 
+        // parse input
         Flags flags = new Flags();
         flags.add("input", "input documents, each is space-separated words.");
         flags.add("output", "the final model, a plain text file.");

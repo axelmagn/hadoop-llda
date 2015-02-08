@@ -9,7 +9,9 @@ import org.apache.hadoop.io.Writable;
 public class DocumentWritable implements Writable {
   public int [] words = null;
   public int [] topics = null;
+  public int [] labels = null;
   private int numWords = 0;
+  private int numLabels = 0;
   private byte [] buffer = new byte[10240];
   
   public int getNumWords() {
@@ -24,22 +26,42 @@ public class DocumentWritable implements Writable {
     numWords = n;
   }
 
+  public int getNumLabels() {
+    return numLabels;
+  }
+
+  public void setNumLabels(int n) {
+    if(labels == null || labels.length < n) {
+      labels = new int[n];
+    }
+    numLabels = n;
+  }
+
   public void readFields(DataInput input) throws IOException {
-    int size = input.readInt();
+    int wordByteSize = input.readInt();
+    int labelByteSize = input.readInt();
+    int size = wordByteSize + labelByteSize;
     if (buffer.length < size) {
       buffer = new byte[size + 1024];
     }
     
     input.readFully(buffer, 0, size);
-    setNumWords(size / 4 / 2);
+    setNumWords(wordByteSize / 4 / 2);
     for (int i = 0; i < numWords; i++) {
       words[i] = fourBytesToInt(buffer, i * 2 * 4);
       topics[i] = fourBytesToInt(buffer, (i * 2 + 1) * 4);
     }
+
+    setNumLabels(labelByteSize / 4);
+    for (int i = 0; i < numLabels; i++) {
+      labels[i] = fourBytesToInt(buffer, wordByteSize + i * 4);
+    }
   }
 
   public void write(DataOutput output) throws IOException {
-    int size = numWords * 2 * 4;
+    int wordByteSize = numWords * 2 * 4;
+    int labelByteSize = numWords * 4;
+    int size = wordByteSize + labelByteSize;
       if (buffer.length < size) {
         buffer = new byte[size + 1024];
       }
@@ -47,7 +69,11 @@ public class DocumentWritable implements Writable {
       intToFourBytes(buffer, i * 2 * 4, words[i]);
       intToFourBytes(buffer, (i * 2 + 1) * 4, topics[i]);
     }
-    output.writeInt(size);
+    for(int i = 0; i < numLabels; i++) {
+      intToFourBytes(buffer, wordByteSize + i * 2, labels[i]);
+    }
+    output.writeInt(wordByteSize);
+    output.writeInt(labelByteSize);
     output.write(buffer, 0, size);
   }
   
@@ -69,6 +95,12 @@ public class DocumentWritable implements Writable {
   
   public String toString() {
     StringBuilder sb = new StringBuilder();
+    sb.append("[");
+    for(int i = 0; i < numLabels; i++) {
+      sb.append(i > 0 ? " " : "");
+      sb.append(labels[i]);
+    }
+    sb.append("]\t");
     for ( int i = 0 ; i < numWords ; i++ ) {
       sb.append(i > 0 ? " " : "");
       sb.append(words[i]);

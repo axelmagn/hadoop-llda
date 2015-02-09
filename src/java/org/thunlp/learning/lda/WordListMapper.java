@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 public class WordListMapper implements Mapper<Text, Text, Text, Text> {
+    public final static String FIELD_SEP = "\t";
+    public final static int FIELD_COUNT = 2;
     public static String NUM_DOCS_STRING = " ";
     Text outkey = new Text();
     Text outvalue = new Text();
@@ -22,7 +24,12 @@ public class WordListMapper implements Mapper<Text, Text, Text, Text> {
 
     public void map(Text key, Text value, OutputCollector<Text, Text> output,
                     Reporter r) throws IOException {
-        String[] words = value.toString().split(" ");
+        String[] fields = value.toString().split(FIELD_SEP, FIELD_COUNT);
+        if(fields.length < FIELD_COUNT) {
+            throw new IOException("Not enough fields found in value");
+        }
+        String text = fields[1];
+        String[] words = text.split(" ");
         wordfreq.clear();
         for (String w : words) {
             wordfreq.inc(w, 1);

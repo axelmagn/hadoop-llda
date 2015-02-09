@@ -140,6 +140,14 @@ public class InitModelTool implements GenericTool {
         return keymap;
     }
 
+    /**
+     * Given a corpus, make a word list.  The word list consists of
+     * KV records where the word is the key and the value is "TF DF"
+     *
+     * @param input     Input path consisting of labels and text records as specified in README
+     * @param output    Output path target
+     * @throws IOException
+     */
     public void makeWordList(Path input, Path output) throws IOException {
         MapReduceJobConf job = new MapReduceJobConf(this.getClass());
         job.setJobName("EstimateWordFreqForLDA");

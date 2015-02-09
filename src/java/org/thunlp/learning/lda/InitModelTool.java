@@ -3,6 +3,7 @@ package org.thunlp.learning.lda;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
@@ -144,16 +145,38 @@ public class InitModelTool implements GenericTool {
      * Given a corpus, make a word list.  The word list consists of
      * KV records where the word is the key and the value is "TF DF"
      *
-     * @param input     Input path consisting of labels and text records as specified in README
+     * @param input     Input path consisting of labels and text
+     *                  records as specified in README
      * @param output    Output path target
      * @throws IOException
      */
     public void makeWordList(Path input, Path output) throws IOException {
         MapReduceJobConf job = new MapReduceJobConf(this.getClass());
-        job.setJobName("EstimateWordFreqForLDA");
+        job.setJobName("EstimateWordFreqForLLDA");
         job.setMapReduce(WordListMapper.class, WordListReducer.class);
         job.setCombinerClass(WordListCombiner.class);
         job.setKeyValueClass(Text.class, Text.class, Text.class, Text.class);
+        SequenceFileInputFormat.addInputPath(job, input);
+        SequenceFileOutputFormat.setOutputPath(job, output);
+        JobClient.runJob(job);
+    }
+
+    /**
+     * Given a corpus, make a label list.  The label list consists of
+     * KV records where the label is the key and its occurrence count
+     * is the value.
+     *
+     * @param input     Input path consisting of labels and text
+     *                  records as specified in README
+     * @param output    Output path target
+     * @throws IOException
+     */
+    public void makeLabelList(Path input, Path output) throws IOException {
+        MapReduceJobConf job = new MapReduceJobConf(this.getClass());
+        job.setJobName("EstimateLabelFreqForLLDA");
+        job.setMapReduce(LabelListMapper.class, LabelListReducer.class);
+        job.setCombinerClass(LabelListReducer.class);
+        job.setKeyValueClass(Text.class, Text.class, Text.class, LongWritable.class);
         SequenceFileInputFormat.addInputPath(job, input);
         SequenceFileOutputFormat.setOutputPath(job, output);
         JobClient.runJob(job);
